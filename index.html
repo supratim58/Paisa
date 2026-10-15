@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paisa – Money Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f3d2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Paisa">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#eef2ef;--card:#fff;--ink:#14201b;--mute:#6b7a73;--line:#dde4e0;--in:#0f7a4d;--out:#c2412d;--brand:#0f3d2e;--on:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#0d1411;--card:#16201b;--ink:#e8efeb;--mute:#8a9b93;--line:#25332c;--in:#3ecf8e;--out:#ff7a66;--brand:#0f3d2e}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top) 0 calc(88px + env(safe-area-inset-bottom))}
+.wrap{max-width:520px;margin:0 auto;padding:16px}
+.num{font-variant-numeric:tabular-nums}
+.total{background:var(--brand);color:#fff;border-radius:20px;padding:22px 20px 18px}
+.total small{opacity:.7;font-size:13px}
+.total .big{font-size:40px;font-weight:700;letter-spacing:-.02em;margin:2px 0 14px}
+.split{display:flex;gap:10px}
+.split div{flex:1;background:rgba(255,255,255,.12);border-radius:12px;padding:10px 12px}
+.split b{display:block;font-size:19px;margin-top:2px}
+.today{display:flex;justify-content:space-between;margin:14px 4px 4px;color:var(--mute);font-size:14px}
+.today b{color:var(--ink)}
+h2{font-size:15px;margin:22px 4px 8px;color:var(--mute);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.day{font-size:13px;color:var(--mute);margin:16px 4px 6px;display:flex;justify-content:space-between}
+.item{background:var(--card);border:1px solid var(--line);padding:12px 14px;display:flex;gap:12px;align-items:center}
+.item:first-of-type{border-radius:14px 14px 0 0}.item:last-of-type{border-radius:0 0 14px 14px}.item:only-of-type{border-radius:14px}
+.item+.item{border-top:0}
+.item .t{flex:1;min-width:0}
+.item .t b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .t span{font-size:12.5px;color:var(--mute)}
+.amt{font-weight:700}.in{color:var(--in)}.out{color:var(--out)}
+.del{background:none;border:0;color:var(--mute);font-size:20px;padding:4px 6px;cursor:pointer}
+.empty{text-align:center;color:var(--mute);padding:40px 10px}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 35%);display:flex;gap:10px;max-width:520px;margin:0 auto}
+.bar button{flex:1;border:0;border-radius:16px;padding:16px;font:600 16px inherit;color:#fff;cursor:pointer}
+.bar .a{background:var(--in);color:#06150e}.bar .s{background:var(--out);color:#fff}
+@media(prefers-color-scheme:dark){.bar .s{color:#1b0a06}}
+dialog{border:0;border-radius:22px 22px 0 0;padding:0;width:100%;max-width:520px;margin:auto auto 0;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+form{padding:20px 18px calc(20px + env(safe-area-inset-bottom));display:grid;gap:14px}
+form h3{margin:0;font-size:20px}
+label{font-size:13px;color:var(--mute);display:grid;gap:6px}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:13px;width:100%}
+input:focus{outline:2px solid var(--brand);border-color:transparent}
+#amount{font-size:28px;font-weight:700}
+.seg{display:flex;gap:8px}
+.seg label{flex:1}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:block;text-align:center;padding:12px 4px;border:1px solid var(--line);border-radius:12px;color:var(--ink);font-size:14px;background:var(--bg)}
+.seg input:checked+span{background:var(--brand);color:#fff;border-color:var(--brand)}
+.go{border:0;border-radius:14px;padding:15px;font:600 16px inherit;color:#fff;cursor:pointer}
+.link{background:none;border:0;color:var(--mute);font:inherit;font-size:13px;cursor:pointer;padding:4px 0}
+.tools{display:flex;flex-wrap:wrap;gap:6px 16px;margin:24px 4px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="total">
+    <small>Total balance</small>
+    <div class="big num" id="total">₹0</div>
+    <div class="split">
+      <div><small>Bank</small><b class="num" id="bank">₹0</b></div>
+      <div><small>Cash</small><b class="num" id="cash">₹0</b></div>
+    </div>
+  </div>
+  <div class="today"><span>Spent today <b class="num" id="todaySpent">₹0</b></span><span>This month <b class="num" id="monthSpent">₹0</b></span></div>
+  <h2>History</h2>
+  <div id="list"></div>
+  <div class="tools">
+    <button class="link" id="openingBtn">Set opening balance</button>
+    <button class="link" id="csvBtn">Export CSV</button>
+    <button class="link" id="backupBtn">Backup</button>
+    <button class="link" id="restoreBtn">Restore</button>
+    <input type="file" id="file" accept=".json" hidden>
+  </div>
+</div>
+<div class="bar"><button class="a" data-t="in">+ Add money</button><button class="s" data-t="out">− Spend money</button></div>
+
+<dialog id="dlg"><form id="f" method="dialog">
+  <h3 id="ft"></h3>
+  <label>Amount<input id="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0" required></label>
+  <div class="seg" id="methods"></div>
+  <label>Title<input id="title" maxlength="60" placeholder="e.g. Groceries" required></label>
+  <label>Date<input id="date" type="date" required></label>
+  <button class="go" id="save" type="submit">Save</button>
+  <button class="link" type="button" id="cancel">Cancel</button>
+</form></dialog>
+
+<dialog id="odlg"><form id="of" method="dialog">
+  <h3>Opening balance</h3>
+  <label>Bank<input id="ob" type="number" inputmode="decimal" step="0.01" required></label>
+  <label>Cash<input id="oc" type="number" inputmode="decimal" step="0.01" required></label>
+  <button class="go" style="background:var(--brand)" type="submit">Save</button>
+  <button class="link" type="button" id="ocancel">Cancel</button>
+</form></dialog>
+
+<script>
+const KEY='paisa.v1';
+const $=id=>document.getElementById(id);
+const inr=n=>(n<0?'-':'')+'₹'+Math.abs(n).toLocaleString('en-IN',{maximumFractionDigits:2});
+const METHODS={upi:['UPI','bank'],bank:['Bank transfer','bank'],cash:['Cash','cash']};
+let db;
+try{db=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+db=db||{opening:{bank:0,cash:0},tx:[]};
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert('Could not save data. Storage may be full or blocked.')}};
+const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+
+function render(){
+  let bank=+db.opening.bank,cash=+db.opening.cash,ts=0,ms=0;
+  const t=today(),m=t.slice(0,7);
+  db.tx.forEach(x=>{
+    const s=x.type==='in'?1:-1, acc=METHODS[x.method][1];
+    if(acc==='bank')bank+=s*x.amount;else cash+=s*x.amount;
+    if(x.type==='out'){if(x.date===t)ts+=x.amount;if(x.date.slice(0,7)===m)ms+=x.amount}
+  });
+  $('bank').textContent=inr(bank);$('cash').textContent=inr(cash);$('total').textContent=inr(bank+cash);
+  $('todaySpent').textContent=inr(ts);$('monthSpent').textContent=inr(ms);
+  const L=$('list');L.innerHTML='';
+  if(!db.tx.length){L.innerHTML='<div class="empty">No entries yet.<br>Tap “Add money” or “Spend money” to log one.</div>';return}
+  const sorted=[...db.tx].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+  const byDay={};sorted.forEach(x=>(byDay[x.date]??=[]).push(x));
+  Object.keys(byDay).forEach(d=>{
+    const net=byDay[d].reduce((s,x)=>s+(x.type==='in'?x.amount:-x.amount),0);
+    const h=document.createElement('div');h.className='day';
+    h.innerHTML=`<span>${d===t?'Today':new Date(d+'T00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</span><span class="num">${inr(net)}</span>`;
+    const g=document.createElement('div');g.append(h);
+    byDay[d].forEach(x=>{
+      const r=document.createElement('div');r.className='item';
+      r.innerHTML=`<div class="t"><b></b><span>${METHODS[x.method][0]}</span></div><div class="amt num ${x.type}">${x.type==='in'?'+':'−'}${inr(x.amount)}</div><button class="del" aria-label="Delete">×</button>`;
+      r.querySelector('b').textContent=x.title;
+      r.querySelector('.del').onclick=()=>{if(confirm(`Delete “${x.title}”?`)){db.tx=db.tx.filter(y=>y.id!==x.id);persist();render()}};
+      g.append(r);
+    });
+    L.append(g);
+  });
+}
+
+let mode='out';
+function openForm(t){
+  mode=t;
+  $('ft').textContent=t==='in'?'Add money':'Spend money';
+  $('save').style.background=t==='in'?'var(--in)':'var(--out)';
+  $('save').style.color=t==='in'?'#06150e':'#fff';
+  const opts=t==='in'?{upi:'UPI',bank:'Bank',cash:'Cash'}:{upi:'UPI',bank:'Bank transfer',cash:'Cash'};
+  $('methods').innerHTML=Object.entries(opts).map(([k,v],i)=>`<label><input type="radio" name="m" value="${k}" ${i===0?'checked':''}><span>${v}</span></label>`).join('');
+  $('f').reset();$('date').value=today();
+  $('methods').querySelector('input').checked=true;
+  $('dlg').showModal();setTimeout(()=>$('amount').focus(),50);
+}
+document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>openForm(b.dataset.t));
+$('cancel').onclick=()=>$('dlg').close();
+$('f').onsubmit=e=>{
+  const amount=Math.round(parseFloat($('amount').value)*100)/100;
+  if(!(amount>0)){e.preventDefault();return}
+  db.tx.push({id:Date.now(),type:mode,amount,method:document.querySelector('input[name=m]:checked').value,title:$('title').value.trim(),date:$('date').value});
+  persist();render();
+};
+$('openingBtn').onclick=()=>{$('ob').value=db.opening.bank;$('oc').value=db.opening.cash;$('odlg').showModal()};
+$('ocancel').onclick=()=>$('odlg').close();
+$('of').onsubmit=()=>{db.opening={bank:+$('ob').value||0,cash:+$('oc').value||0};persist();render()};
+
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+$('csvBtn').onclick=()=>{
+  const rows=[['Date','Type','Method','Title','Amount']];
+  [...db.tx].sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id).forEach(x=>rows.push([x.date,x.type==='in'?'Added':'Spent',METHODS[x.method][0],x.title,x.amount]));
+  download('paisa-history.csv',rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv');
+};
+$('backupBtn').onclick=()=>download('paisa-backup-'+today()+'.json',JSON.stringify(db),'application/json');
+$('restoreBtn').onclick=()=>$('file').click();
+$('file').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const d=JSON.parse(await f.text());
+    if(!d.opening||!Array.isArray(d.tx))throw 0;
+    if(confirm('Replace all current data with this backup?')){db=d;persist();render()}
+  }catch(_){alert('This file is not a valid Paisa backup.')}
+  e.target.value='';
+};
+render();
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
